@@ -1,0 +1,183 @@
+<head>
+  <!-- Include Handsfree.js -->
+  <link rel="stylesheet" href="https://unpkg.com/handsfree@8.4.0/build/lib/assets/handsfree.css" />
+  <script src="https://unpkg.com/handsfree@8.4.0/build/lib/handsfree.js"></script>
+</head>
+<style>
+  .finger-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    height: 60px;
+  }
+
+  .finger {
+    width: 25%;
+    display: flex;
+    justify-content: space-around;
+  }
+
+  .finger .is-pressed {
+    display: none;
+  }
+
+  .finger.active .is-pressed {
+    display: block;
+    color: red;
+  }
+</style>
+
+<body>
+  <!-- Your code must be inside body as it applies classes to it -->
+  <div class="finger-container">
+    <!-- <div class="finger" id="indice">
+      <label>Indice</label>
+      <div class="is-pressed">pressed!</div>
+    </div>
+    <div class="finger" id="mayor">
+      <label>Mayor</label>
+      <div class="is-pressed">pressed!</div>
+    </div>
+    <div class="finger" id="anular">
+      <label>Anular</label>
+      <div class="is-pressed">pressed!</div>
+    </div>
+    <div class="finger" id="menique">
+      <label>Menique</label>
+      <div class="is-pressed">pressed!</div>
+    </div>
+  </div> -->
+  <script>
+    // Let's use handtracking and show the webcam feed with wireframes
+    const handsfree = new Handsfree({
+      showDebug: true,
+      hands: true,
+      maxNumHands: 1
+    });
+
+    handsfree.start()
+    const activeClass = 'active';
+    // Create a plugin named "logger" to show data on every frame
+    // let hands;
+
+    // handsfree.use('logger', data => {
+    //   // console.log(data.hands)
+    //   const { hands } = handsfree.data
+    //   if (!hands.pinchState || !hands.pinchState.length) {
+    //     // console.log('no hands data', hands);
+    //     return;
+    //   }
+
+    //   const [_, rightPinchState ] = hands.pinchState;
+    //   ['indice', 'mayor', 'anular', 'menique'].forEach((fingerId, index) => {
+    //     const isPinched = rightPinchState[index] === 'held';
+    //     const fingerElement = document.querySelector(`#${fingerId}`);
+    //     if (isPinched && !fingerElement.classList.contains(activeClass)) {
+    //       fingerElement.classList.add(activeClass);
+    //     }
+
+    //     else if (!isPinched && fingerElement.classList.contains(activeClass)) {
+    //       fingerElement.classList.remove(activeClass);
+    //     }
+
+    //   });
+    // });
+
+    // document.addEventListener('handsfree-data', (event) => {
+
+    //   // console.log('hands', hands, hands.pinchState);
+    // })
+    const logOnce = () => {
+      let logged = false;
+      return (...args) => {
+        if (!logged) {
+          console.log('logging once:', ...args);
+        }
+        logged = true;
+      }
+    }
+
+    const doOnce = (fn) => {
+      let done = false;
+      return (...args) => {
+        if (!done) fn(...args);
+        done = true;
+      }
+    }
+
+    const log = logOnce();
+
+    // const doit = doOnce((canvas) => {
+      
+    // });
+
+    window.onload = () => {
+      setTimeout(() => {
+        if (window.drawConnectors) window.drawConnectors = () => { };
+
+        if (window.drawLandmarks) {
+          // draw = window.drawLandmarks;
+          const drawLandmark = (canvas, { x, y }) => {
+            canvas.fillStyle = 'red';
+            canvas.fillRect(
+              x * canvas.canvas.width,
+              y * canvas.canvas.height,
+              10,10
+            );
+          };
+
+          let shouldDraw = false, currentLine = null, lines = [], drawing = false;
+
+          document.addEventListener('keydown', (e) => {
+            if (e.repeat) return;
+            shouldDraw = true;
+            currentLine = [];
+            lines.push(currentLine);
+          });
+
+          document.addEventListener('keyup', () => {
+            shouldDraw = false;
+          });
+
+          
+
+          const drawPath = (canvas, { x, y }) => {
+            currX = x * canvas.canvas.width;
+            currY = y * canvas.canvas.height;
+            if (lines.length < 1) return;
+            if (shouldDraw) currentLine.push({ x: currX, y: currY });
+
+            lines.forEach((pointPositions) => {
+              if (pointPositions.length <1) return;
+              const clone = pointPositions.map(({ x, y }) => ({ x, y }));
+
+              canvas.beginPath();
+
+              let { x: firstX, y: firstY } = clone.shift()
+  
+              canvas.moveTo(firstX, firstY);
+              clone.forEach(({ x: currX, y: currY }) => {
+                canvas.lineTo(currX, currY);
+                canvas.strokeStyle = 'green';
+                canvas.lineWidth = 3;
+                canvas.stroke();
+              });
+
+              canvas.closePath();
+            });
+          }
+
+          window.drawLandmarks = (canvas, landmarks, lineStyles) => {
+            const landmark = landmarks[8];
+            if (landmark) {
+              drawLandmark(canvas, landmark);
+              drawPath(canvas, landmark);
+            }
+          };
+        }
+      }, 3000)
+    }
+
+
+  </script>
+</body>
