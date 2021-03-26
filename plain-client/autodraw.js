@@ -1,6 +1,7 @@
+const fp = require('lodash/fp');
+
 var API_ENDPOINT = 'https://inputtools.google.com/request?ime=handwriting&app=autodraw&dbg=1&cs=1&oe=UTF-8'
 var SVG_ENDPOINT = 'https://storage.googleapis.com/artlab-public.appspot.com/stencils/selman/'
-
 
 const getBoundingRect = (shapes) => {
   var res = shapes.reduce(function (prev, shape) {
@@ -46,6 +47,24 @@ const parseApiResults = (data) => {
   return JSON.parse(data[1][0][3].debug_info.match(regex)[1])
 }
 
+const sortResultsByConfidence = (a, b) => {
+  if (a.confidence === b.confidence) return 0;
+  if (a.confidence < b.confidence) return -1;
+  if (a.confidence > b.confidence) return 1;
+};
+
+const resultMapper = (result) => {
+  var escapedName = result[0].replace(/ /g, '-');
+  return {
+    name: result[0],
+    confidence: result[1],
+    url: SVG_ENDPOINT + escapedName + '-01.svg',
+    url_variant_1: SVG_ENDPOINT + escapedName + '-02.svg',
+    url_variant_2: SVG_ENDPOINT + escapedName + '-03.svg'
+  }
+};
+
+
 const autodrawApiCall = async (ink, width, height) => {
   const body = {
     input_type: 0,
@@ -71,19 +90,10 @@ const autodrawApiCall = async (ink, width, height) => {
 
   const results = parseApiResults(response);
 
-  const orderedResults = results.map(function (result) {
-    var escapedName = result[0].replace(/ /g, '-')
-    const url = SVG_ENDPOINT + escapedName + '-01.svg';
-    return {
-      name: result[0],
-      confidence: result[1],
-      url: SVG_ENDPOINT + escapedName + '-01.svg',
-      url_variant_1: SVG_ENDPOINT + escapedName + '-02.svg',
-      url_variant_2: SVG_ENDPOINT + escapedName + '-03.svg'
-    }
-  });
-  console.log('ordered', orderedResults);
-  return orderedResults;
+  return fp.compose(
+    fp.map(resultMapper),
+    fp.sortBy(sortResultsByConfidence),
+  )(results);
 };
 
 const autoDraw = (shapes) => {
