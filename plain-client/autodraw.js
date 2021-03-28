@@ -97,7 +97,6 @@ const autodrawApiCall = async (ink, width, height) => {
 };
 
 const autoDraw = (shapes) => {
-  console.log('auto drawing');
   const ink = getInk(shapes);
   const frame = getBoundingRect(shapes);
 

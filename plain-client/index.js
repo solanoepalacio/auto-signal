@@ -25,7 +25,6 @@ window.onload = () => {
     if (window.drawConnectors) window.drawConnectors = () => { };
 
     if (window.drawLandmarks) {
-      // draw = window.drawLandmarks;
       const drawLandmark = (canvas, { x, y }) => {
         canvas.fillStyle = 'red';
         canvas.fillRect(
@@ -46,14 +45,6 @@ window.onload = () => {
           lines.push(currentLine);
           return;
         }
-
-        if (e.code === 'Enter' && canvasWidth && canvasHeight) {
-          console.log('about to autodraw');
-          autoDraw(lines, canvasWidth, canvasHeight).then((results) => {
-            console.log('autodraw results', results);
-          });
-        }
-
       });
 
       document.addEventListener('keyup', () => {

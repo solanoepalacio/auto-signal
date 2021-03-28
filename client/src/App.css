@@ -13,55 +13,54 @@
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
 .App-link {
   color: #61dafb;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.video-container {
-  width: 1280px;
-  height: 720px;
-  position: relative;
-}
-
-.video-container canvas {
-  position: relative;
-  top: 0;
-  left: 0;
-
-}
-
-.video-container video {
-  position: relative;
-  top: 0;
-  left: 0;
-}
-
-.images-container {
-  height: 180px;
+.image-toolbar {
   width: 100%;
   display: flex;
+
+  background: #f6f5f7;
+}
+
+.image-container {
+  width: 50%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.images {
+  display: flex;
+  overflow: hidden;
 }
 
 .suggestions {
-  display: flex;
+  border-right: 2px solid #282c34;
+}
+
+.suggestions .images {
+  width: 94%;
+}
+
+.suggestions .drawing+.drawing {
+  margin-left: 8px;
+}
+
+.picks {
+  border-left: 2px solid #282c34;
+}
+
+.picks .images {
+  width: 100%;
+}
+
+.drawing {
+  background: white;
+}
+
+.selected {
+  border: 3px solid #03a9fc;
 }

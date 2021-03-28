@@ -81,12 +81,10 @@ const autodrawApiCall = async (ink, width, height) => {
       url_variant_2: SVG_ENDPOINT + escapedName + '-03.svg'
     }
   });
-  console.log('ordered', orderedResults);
   return orderedResults;
 };
 
 export const autoDraw = (shapes) => {
-  console.log('auto drawing');
   const ink = getInk(shapes);
   const frame = getBoundingRect(shapes);
 
