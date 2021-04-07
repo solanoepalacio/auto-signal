@@ -1,0 +1,474 @@
+{
+  "service": {
+    "service": "handraw",
+    "serviceObject": {
+      "name": "handraw"
+    },
+    "provider": {
+      "name": "aws",
+      "timeout": 30,
+      "region": "us-east-1",
+      "runtime": "nodejs10.x",
+      "memorySize": 128,
+      "environment": {
+        "UI_BUCKET_NAME": "solano.be-handraw-ui-bucket"
+      },
+      "stage": "dev",
+      "variableSyntax": "\\${([^{}:]+?(?:\\(|:)(?:[^:{}][^{}]*?)?)}",
+      "versionFunctions": true,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ServerlessDeploymentBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "ServerlessDeploymentBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": "s3:*",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Resource": [
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            }
+                          ]
+                        ]
+                      }
+                    ],
+                    "Condition": {
+                      "Bool": {
+                        "aws:SecureTransport": false
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "UIBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "solano.be-handraw-ui-bucket",
+              "AccessControl": "PublicRead",
+              "WebsiteConfiguration": {
+                "IndexDocument": "index.html",
+                "ErrorDocument": "index.html"
+              }
+            }
+          },
+          "UIBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "UIBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": [
+                      "s3:GetObject"
+                    ],
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Resource": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:s3:::",
+                          {
+                            "Ref": "UIBucket"
+                          },
+                          "/*"
+                        ]
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "UICloudfront": {
+            "Type": "AWS::CloudFront::Distribution",
+            "DependsOn": [
+              "UIBucket"
+            ],
+            "Properties": {
+              "DistributionConfig": {
+                "Comment": "Cloudfront Distribution pointing to UI static website S3 bucket",
+                "Origins": [
+                  {
+                    "DomainName": {
+                      "Fn::Select": [
+                        2,
+                        {
+                          "Fn::Split": [
+                            "/",
+                            {
+                              "Fn::GetAtt": [
+                                "UIBucket",
+                                "WebsiteURL"
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "Id": "S3Origin",
+                    "CustomOriginConfig": {
+                      "HTTPPort": "80",
+                      "HTTPSPort": "443",
+                      "OriginProtocolPolicy": "http-only"
+                    }
+                  }
+                ],
+                "Enabled": true,
+                "HttpVersion": "http2",
+                "DefaultRootObject": "index.html",
+                "Aliases": [
+                  "handraw.solano.be"
+                ],
+                "DefaultCacheBehavior": {
+                  "AllowedMethods": [
+                    "GET",
+                    "HEAD"
+                  ],
+                  "Compress": true,
+                  "TargetOriginId": "S3Origin",
+                  "ForwardedValues": {
+                    "QueryString": true,
+                    "Cookies": {
+                      "Forward": "none"
+                    }
+                  },
+                  "ViewerProtocolPolicy": "redirect-to-https"
+                },
+                "PriceClass": "PriceClass_All",
+                "ViewerCertificate": {
+                  "AcmCertificateArn": "arn:aws:acm:us-east-1:742666682568:certificate/7906beb2-18c3-4629-a2ed-1718472d1091",
+                  "SslSupportMethod": "sni-only"
+                }
+              }
+            }
+          },
+          "PublicDNS": {
+            "Type": "AWS::Route53::RecordSet",
+            "Properties": {
+              "HostedZoneName": "solano.be.",
+              "Name": "handraw.solano.be",
+              "Region": "us-east-1",
+              "Type": "A",
+              "AliasTarget": {
+                "HostedZoneId": "Z2FDTNDATAQYW2",
+                "DNSName": {
+                  "Fn::GetAtt": [
+                    "UICloudfront",
+                    "DomainName"
+                  ]
+                }
+              },
+              "SetIdentifier": "handraw"
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            }
+          }
+        }
+      },
+      "coreCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ServerlessDeploymentBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "ServerlessDeploymentBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": "s3:*",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Resource": [
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            }
+                          ]
+                        ]
+                      }
+                    ],
+                    "Condition": {
+                      "Bool": {
+                        "aws:SecureTransport": false
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            }
+          }
+        }
+      }
+    },
+    "custom": {
+      "UI_BUCKET_NAME": "solano.be-handraw-ui-bucket"
+    },
+    "pluginsData": {},
+    "functions": {},
+    "resources": {
+      "Resources": {
+        "UIBucket": {
+          "Type": "AWS::S3::Bucket",
+          "Properties": {
+            "BucketName": "solano.be-handraw-ui-bucket",
+            "AccessControl": "PublicRead",
+            "WebsiteConfiguration": {
+              "IndexDocument": "index.html",
+              "ErrorDocument": "index.html"
+            }
+          }
+        },
+        "UIBucketPolicy": {
+          "Type": "AWS::S3::BucketPolicy",
+          "Properties": {
+            "Bucket": {
+              "Ref": "UIBucket"
+            },
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Effect": "Allow",
+                  "Principal": "*",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:s3:::",
+                        {
+                          "Ref": "UIBucket"
+                        },
+                        "/*"
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "UICloudfront": {
+          "Type": "AWS::CloudFront::Distribution",
+          "DependsOn": [
+            "UIBucket"
+          ],
+          "Properties": {
+            "DistributionConfig": {
+              "Comment": "Cloudfront Distribution pointing to UI static website S3 bucket",
+              "Origins": [
+                {
+                  "DomainName": {
+                    "Fn::Select": [
+                      2,
+                      {
+                        "Fn::Split": [
+                          "/",
+                          {
+                            "Fn::GetAtt": [
+                              "UIBucket",
+                              "WebsiteURL"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "Id": "S3Origin",
+                  "CustomOriginConfig": {
+                    "HTTPPort": "80",
+                    "HTTPSPort": "443",
+                    "OriginProtocolPolicy": "http-only"
+                  }
+                }
+              ],
+              "Enabled": true,
+              "HttpVersion": "http2",
+              "DefaultRootObject": "index.html",
+              "Aliases": [
+                "handraw.solano.be"
+              ],
+              "DefaultCacheBehavior": {
+                "AllowedMethods": [
+                  "GET",
+                  "HEAD"
+                ],
+                "Compress": true,
+                "TargetOriginId": "S3Origin",
+                "ForwardedValues": {
+                  "QueryString": true,
+                  "Cookies": {
+                    "Forward": "none"
+                  }
+                },
+                "ViewerProtocolPolicy": "redirect-to-https"
+              },
+              "PriceClass": "PriceClass_All",
+              "ViewerCertificate": {
+                "AcmCertificateArn": "arn:aws:acm:us-east-1:742666682568:certificate/7906beb2-18c3-4629-a2ed-1718472d1091",
+                "SslSupportMethod": "sni-only"
+              }
+            }
+          }
+        },
+        "PublicDNS": {
+          "Type": "AWS::Route53::RecordSet",
+          "Properties": {
+            "HostedZoneName": "solano.be.",
+            "Name": "handraw.solano.be",
+            "Region": "us-east-1",
+            "Type": "A",
+            "AliasTarget": {
+              "HostedZoneId": "Z2FDTNDATAQYW2",
+              "DNSName": {
+                "Fn::GetAtt": [
+                  "UICloudfront",
+                  "DomainName"
+                ]
+              }
+            },
+            "SetIdentifier": "handraw"
+          }
+        }
+      },
+      "Outputs": {}
+    },
+    "configValidationMode": "warn",
+    "serviceFilename": "serverless.yml",
+    "layers": {},
+    "initialServerlessConfig": {
+      "service": {
+        "$ref": "$[\"service\"][\"serviceObject\"]"
+      },
+      "custom": {
+        "$ref": "$[\"service\"][\"custom\"]"
+      },
+      "provider": {
+        "$ref": "$[\"service\"][\"provider\"]"
+      },
+      "resources": {
+        "$ref": "$[\"service\"][\"resources\"]"
+      },
+      "package": {
+        "individually": true,
+        "excludeDevDependencies": false,
+        "exclude": [
+          "./**"
+        ],
+        "artifactDirectoryName": "serverless/handraw/dev/1617159648662-2021-03-31T03:00:48.662Z"
+      }
+    },
+    "isDashboardMonitoringPreconfigured": false
+  },
+  "package": {
+    "individually": true,
+    "artifactDirectoryName": "serverless/handraw/dev/1617159648662-2021-03-31T03:00:48.662Z",
+    "artifact": ""
+  }
+}

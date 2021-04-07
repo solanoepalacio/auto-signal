@@ -75,6 +75,7 @@ function VideoFeedback({ onSubmitLines }) {
     if (e.code === 'Space') {
       shouldDraw.current = false;
       // TODO: Perform simplifying and smoothing of the line
+      console.log('submiting lines', lines.current);
       onSubmitLines(lines.current, canvasWidth.current, canvasHeight.current);
     }
   };

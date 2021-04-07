@@ -1,0 +1,132 @@
+service: handraw
+
+custom:
+  # serverless-offline:
+  #   host: 0.0.0.0
+  #   httpPort: 4000
+  UI_BUCKET_NAME: "solano.be-handraw-ui-bucket"
+
+# plugins:
+#   - serverless-offline
+
+provider:
+  name: aws
+  timeout: 30
+  region: ${opt:region, 'us-east-1'}
+  runtime: nodejs10.x
+  memorySize: 128
+  environment:
+    UI_BUCKET_NAME: ${self:custom.UI_BUCKET_NAME}
+
+# functions:
+#   get-all-patients:
+#     handler: lambda/functions/patients.getAll
+#     package:
+#       include:
+#         - lambda/**
+#     events:
+#       - http:
+#           path: patients/
+#           method: GET
+#           cors: true
+#   create-patient:
+#     handler: lambda/functions/patients.create
+#     package:
+#       include:
+#         - lambda:/**
+#     events:
+#       - http:
+#         path: patient/
+#         method: POST
+#         cors: true
+#   register-game:
+#     handler: lambda/functions/game.register
+#     package:
+#       include:
+#         - lambda/**
+#     events:
+#       - http:
+#           path: game/
+#           method: POST
+#           cors: true
+
+resources:
+  Resources:
+    UIBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.UI_BUCKET_NAME}
+        AccessControl: PublicRead
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+
+    UIBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: "UIBucket"
+        PolicyDocument:
+          Statement:
+            - Action:
+                - "s3:GetObject"
+              Effect: "Allow"
+              Principal: "*"
+              Resource:
+                Fn::Join:
+                  - ""
+                  - - "arn:aws:s3:::"
+                    - Ref: "UIBucket"
+                    - "/*"
+    UICloudfront:
+      Type: AWS::CloudFront::Distribution
+      DependsOn:
+        - UIBucket
+      Properties:
+        DistributionConfig:
+          Comment: Cloudfront Distribution pointing to UI static website S3 bucket
+          Origins:
+            - DomainName: !Select [2, !Split ["/", !GetAtt UIBucket.WebsiteURL]]
+              Id: S3Origin
+              CustomOriginConfig:
+                HTTPPort: "80"
+                HTTPSPort: "443"
+                OriginProtocolPolicy: http-only
+          Enabled: true
+          HttpVersion: "http2"
+          DefaultRootObject: index.html
+          Aliases:
+            - handraw.solano.be
+          DefaultCacheBehavior:
+            AllowedMethods:
+              - GET
+              - HEAD
+            Compress: true
+            TargetOriginId: S3Origin
+            ForwardedValues:
+              QueryString: true
+              Cookies:
+                Forward: none
+            ViewerProtocolPolicy: redirect-to-https
+          PriceClass: PriceClass_All
+          ViewerCertificate:
+            AcmCertificateArn: "arn:aws:acm:us-east-1:742666682568:certificate/7906beb2-18c3-4629-a2ed-1718472d1091"
+            SslSupportMethod: sni-only
+
+    PublicDNS:
+      Type: AWS::Route53::RecordSet
+      Properties:
+        HostedZoneName: solano.be.
+        Name: handraw.solano.be
+        Region: "us-east-1"
+        Type: A
+        AliasTarget:
+          HostedZoneId: "Z2FDTNDATAQYW2"
+          DNSName: !GetAtt [UICloudfront, DomainName]
+        SetIdentifier: handraw
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  exclude:
+    - ./**
