@@ -1,7 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import simplify from 'simplify-js';
 
-import { Button } from '@material-ui/core';
+import { Button, Typography } from '@material-ui/core';
+
+import Dialog from '@material-ui/core/Dialog';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import ArrowForwardIcon from '@material-ui/icons/ArrowForward';
+import ArrowDownwardIcon from '@material-ui/icons/ArrowDownward';
+import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
+import SpaceBarIcon from '@material-ui/icons/SpaceBar';
+import MouseIcon from '@material-ui/icons/Mouse';
+
+import Utils from '../utils';
 
 import './styles/video-feedback.css';
 
@@ -47,6 +61,8 @@ function VideoFeedback({ onSubmitLines }) {
   let videoRunning = useRef(false);
   const canvasRef = useRef('canvas');
 
+  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
+
   const onKeyDown = (e) => {
     if (e.repeat) return;
 
@@ -75,8 +91,8 @@ function VideoFeedback({ onSubmitLines }) {
     if (e.code === 'Space') {
       shouldDraw.current = false;
       // TODO: Perform simplifying and smoothing of the line
-      console.log('submiting lines', lines.current);
-      onSubmitLines(lines.current, canvasWidth.current, canvasHeight.current);
+      const simplified = lines.current.map((pointPositions) => simplify(pointPositions.map(({ x, y }) => ({ x, y })), 5));
+      onSubmitLines(simplified, canvasWidth.current, canvasHeight.current);
     }
   };
 
@@ -107,9 +123,9 @@ function VideoFeedback({ onSubmitLines }) {
   const setListenersOnce = () => {
     if (!listenersSet.current) {
       listenersSet.current = true;
-      document.addEventListener('keydown', onKeyDown);
-      document.addEventListener('keyup', onKeyUp);
-      document.addEventListener('click', onClick);
+      Utils.debouncedListener('keydown', onKeyDown);
+      Utils.debouncedListener('keyup', onKeyUp);
+      Utils.debouncedListener('click', onClick);
     }
   }
 
@@ -120,8 +136,8 @@ function VideoFeedback({ onSubmitLines }) {
     }
   }
 
-  const [ videoFeedbackLoaded, setVideoFeedbackLoaded ] = useState(false);
-  const [ videoFeedbackRunning, setVideoFeedbackRunning ] = useState(false);
+  const [videoFeedbackLoaded, setVideoFeedbackLoaded] = useState(false);
+  const [videoFeedbackRunning, setVideoFeedbackRunning] = useState(false);
 
   const loop = () => {
     const canvasContext = canvasRef.current.getContext('2d');
@@ -167,13 +183,53 @@ function VideoFeedback({ onSubmitLines }) {
 
   return (
     <div class="video-container" tabIndex="0">
-      <div style={{width: '1280px'}}>
+      <div style={{ width: '1280px' }}>
         <canvas style={{ transform: 'scale(-1, 1)' }} ref={canvasRef} width="1280" height="720"></canvas>
       </div>
       <div className="controls">
         <Button variant="contained" color="secondary" disabled={!videoFeedbackLoaded} onClick={toggleVideoRunning}>
-          { videoFeedbackRunning ? 'stop' : 'start' }
+          {videoFeedbackRunning ? 'stop' : 'start'}
         </Button>
+        <div className="help-button" onClick={() => setHelpDialogOpen(true)}>
+          <Typography >Help</Typography>
+        </div>
+        <Dialog open={helpDialogOpen} onClose={() => setHelpDialogOpen(false)} aria-labelledby="form-dialog-title">
+          <DialogTitle id="form-dialog-title">Keyboard Reference:</DialogTitle>
+          <DialogContent>
+            <div className="keyboard-help">
+              <ArrowUpwardIcon/>
+              <DialogContentText>Borra todas las lineas dibujadas (en el video)</DialogContentText>
+            </div>
+            <div className="keyboard-help">
+              <ArrowForwardIcon/>
+              <DialogContentText>Mueve la seleccion hacia la derecha</DialogContentText>
+            </div>
+            <div className="keyboard-help">
+              <ArrowBackIcon/>
+              <DialogContentText>Mueve la seleccion hacia la izquierda</DialogContentText>
+            </div>
+            <div className="keyboard-help">
+              <ArrowDownwardIcon/>
+              <DialogContentText>Borra la ultima linea dibujada (en el video)</DialogContentText>
+            </div>
+
+            <div className="keyboard-help">
+              <SpaceBarIcon/>
+              <DialogContentText>Presiona esta tecla para dibujar</DialogContentText>
+            </div>
+
+            <div className="keyboard-help">
+              <MouseIcon/>
+              <DialogContentText>Une la imagen seleccionada al grupo de la derecha</DialogContentText>
+            </div>
+            </DialogContent>
+          {/* <DialogActions>
+            <Button variant="contained" onClick={handleSavePatient} color="primary">
+              <SaveIcon></SaveIcon>
+            </Button>
+          </DialogActions> */}
+        </Dialog>
+
       </div>
     </div>
   );

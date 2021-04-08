@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { useState, useRef, useEffect } from 'react';
 import { autoDraw } from './services/autodraw-api';
 
@@ -6,6 +7,17 @@ import VideoFeedback from './components/VideoFeedback';
 import './App.css';
 const VIDEO_FEEDBACK_HEIGHT = 720 + 44;
 
+const track = () => {
+  const referrer = document.referrer;
+  const browser = _.get(window, 'navigator.appName');
+  const platform = _.get(window, 'navigator.platform');
+  fetch('https://sf27prmmu5.execute-api.us-east-1.amazonaws.com/dev/session/start', {
+    method: 'POST',
+    body: JSON.stringify({
+      referrer, platform, browser,
+    }),
+  })
+};
 
 const imgClasses = (url, selectedImage) => {
   const classes = ['drawing'];
@@ -71,7 +83,7 @@ function App() {
     };
 
     if (e.code === 'ArrowLeft') {
-      const selectedIndex = getSelectedImageIndex(selectedImageRef.url);
+      const selectedIndex = getSelectedImageIndex(selectedImageRef.current.url);
       const newSelection = imageSuggestionsRef.current[selectedIndex - 1];
       if (newSelection) {
         selectImage(newSelection);
@@ -99,6 +111,7 @@ function App() {
 
   useEffect(() => {
     setListenersOnce();
+    if (process.env.NODE_ENV !== 'development') track();
   });
 
   return (
@@ -109,8 +122,9 @@ function App() {
             {imageSuggestions.map(({ url }) => (
               <img
                 className={imgClasses(url, selectedImage)}
-                style={{ width: `${imageHeight}px`, height: `${imageHeight}px` }}
+                key={url}
                 src={url}
+                style={{ width: `${imageHeight}px`, height: `${imageHeight}px` }}
               />
             ))}
           </div>
@@ -118,7 +132,11 @@ function App() {
         <div className="image-container picks" style={{ height: `${imageToolbarHeight}px` }}>
           <div className="images">
             {imagesPicked.map(({url}) => {
-              return (<img src={url} className="drawing" />)
+              return (<img
+                src={url} className="drawing"
+                key={url}
+                style={{ width: `${imageHeight}px`, height: `${imageHeight}px` }}
+              />)
             })}
           </div>
         </div>
