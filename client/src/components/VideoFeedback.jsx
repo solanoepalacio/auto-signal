@@ -2,35 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import simplify from 'simplify-js';
 
 import { Button } from '@material-ui/core';
+import HelpDialog from './HelpDialog';
+
+import Utils from '../utils';
 
 import './styles/video-feedback.css';
-
-const drawPaths = (lines, canvasContext, lineColor = 'green') => {
-  lines.forEach((pointPositions) => {
-    if (pointPositions.length < 1) return;
-    const simplified = simplify(pointPositions.map(({ x, y }) => ({ x, y })), 5);
-
-    canvasContext.beginPath();
-
-    let { x: firstX, y: firstY } = simplified.shift()
-
-    canvasContext.moveTo(firstX, firstY);
-    simplified.forEach(({ x: currX, y: currY }) => {
-      canvasContext.lineTo(currX, currY);
-      canvasContext.strokeStyle = lineColor;
-      canvasContext.lineWidth = 3;
-      canvasContext.lineCap = 'round';
-      canvasContext.stroke();
-    });
-
-    canvasContext.closePath();
-  });
-};
-
-const drawLandmark = ({ x, y }, canvasContext, color = 'red') => {
-  canvasContext.fillStyle = color;
-  canvasContext.fillRect(x, y, 10, 10);
-};
 
 const handsfree = new window.Handsfree({
   hands: true,
@@ -74,9 +50,8 @@ function VideoFeedback({ onSubmitLines }) {
   const onKeyUp = (e) => {
     if (e.code === 'Space') {
       shouldDraw.current = false;
-      // TODO: Perform simplifying and smoothing of the line
-      console.log('submiting lines', lines.current);
-      onSubmitLines(lines.current, canvasWidth.current, canvasHeight.current);
+      const simplified = lines.current.map((pointPositions) => simplify(pointPositions.map(({ x, y }) => ({ x, y })), 5));
+      onSubmitLines(simplified, canvasWidth.current, canvasHeight.current);
     }
   };
 
@@ -107,9 +82,9 @@ function VideoFeedback({ onSubmitLines }) {
   const setListenersOnce = () => {
     if (!listenersSet.current) {
       listenersSet.current = true;
-      document.addEventListener('keydown', onKeyDown);
-      document.addEventListener('keyup', onKeyUp);
-      document.addEventListener('click', onClick);
+      Utils.debouncedListener('keydown', onKeyDown);
+      Utils.debouncedListener('keyup', onKeyUp);
+      Utils.debouncedListener('click', onClick);
     }
   }
 
@@ -120,8 +95,8 @@ function VideoFeedback({ onSubmitLines }) {
     }
   }
 
-  const [ videoFeedbackLoaded, setVideoFeedbackLoaded ] = useState(false);
-  const [ videoFeedbackRunning, setVideoFeedbackRunning ] = useState(false);
+  const [videoFeedbackLoaded, setVideoFeedbackLoaded] = useState(false);
+  const [videoFeedbackRunning, setVideoFeedbackRunning] = useState(false);
 
   const loop = () => {
     const canvasContext = canvasRef.current.getContext('2d');
@@ -150,11 +125,11 @@ function VideoFeedback({ onSubmitLines }) {
           y: landmark.y * canvasRef.current.height
         };
 
-        drawLandmark(currentLandmark, canvasContext);
+        Utils.drawLandmark(currentLandmark, canvasContext);
         if (shouldDraw.current) currentLine.current.push(currentLandmark);
       }
 
-      drawPaths(lines.current, canvasContext);
+      Utils.drawPaths(lines.current, canvasContext);
       if (videoRunning.current) loop();
     });
   };
@@ -167,13 +142,16 @@ function VideoFeedback({ onSubmitLines }) {
 
   return (
     <div class="video-container" tabIndex="0">
-      <div style={{width: '1280px'}}>
+      <div style={{ width: '1280px' }}>
         <canvas style={{ transform: 'scale(-1, 1)' }} ref={canvasRef} width="1280" height="720"></canvas>
       </div>
       <div className="controls">
         <Button variant="contained" color="secondary" disabled={!videoFeedbackLoaded} onClick={toggleVideoRunning}>
-          { videoFeedbackRunning ? 'stop' : 'start' }
+          {videoFeedbackRunning ? 'stop' : 'start'}
         </Button>
+
+        <HelpDialog  />
+
       </div>
     </div>
   );
