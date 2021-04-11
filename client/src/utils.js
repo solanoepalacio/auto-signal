@@ -47,6 +47,27 @@ function drawLandmark ({ x, y }, canvasContext, color = 'red') {
   canvasContext.fillRect(x, y, 10, 10);
 };
 
+function drawImages (images, canvasContext) {
+  images.forEach((imageData) => {
+    const element = document.createElement('img');
+    element.src = imageData.url;
+    canvasContext.drawImage(
+      element,
+      imageData.position.x,
+      imageData.position.y,
+      imageData.size,
+      imageData.size,
+    );
+  });
+};
+
+function getDefaultPosition (canvasWidth, canvasHeight, size) {
+  return {
+    x: 0 + canvasWidth - size,
+    y: 0 + canvasHeight / 2 - size / 2,
+  }
+}
 
 
-export default { debouncedListener, point, drawLandmark, drawPaths };
+
+export default { debouncedListener, point, drawLandmark, drawPaths, drawImages, getDefaultPosition };

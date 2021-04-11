@@ -25,7 +25,6 @@
 }
 
 .image-container {
-  width: 50%;
   box-sizing: border-box;
   display: flex;
   justify-content: center;
@@ -36,10 +35,6 @@
   display: flex;
   overflow: hidden;
   width: 94%;
-}
-
-.suggestions {
-  border-right: 2px solid #282c34;
 }
 
 .drawing+.drawing {

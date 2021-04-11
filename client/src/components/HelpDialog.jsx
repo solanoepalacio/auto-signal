@@ -18,7 +18,7 @@ export default function HelpDialog() {
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   return (
     <div className="help-button" onClick={() => setHelpDialogOpen(true)}>
-      <Typography >Help</Typography>
+      <Typography>Help</Typography>
       <Dialog open={helpDialogOpen} onClose={() => setHelpDialogOpen(false)} aria-labelledby="form-dialog-title">
         <DialogTitle id="form-dialog-title">Keyboard Reference:</DialogTitle>
         <DialogContent>

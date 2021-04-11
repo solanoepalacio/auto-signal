@@ -13,7 +13,7 @@ const handsfree = new window.Handsfree({
   maxNumHands: 1
 });
 
-function VideoFeedback({ onSubmitLines }) {
+function VideoFeedback({ onSubmitLines, imagesPicked }) {
   let listenersSet = useRef(false);
   let shouldDraw = useRef(false);
   let currentLine = useRef(null);
@@ -22,6 +22,10 @@ function VideoFeedback({ onSubmitLines }) {
   let canvasHeight = useRef(0);
   let videoRunning = useRef(false);
   const canvasRef = useRef('canvas');
+
+  // const imageRefs = imagesPicked.map(image => {
+    
+  // });
 
   const onKeyDown = (e) => {
     if (e.repeat) return;
@@ -35,7 +39,7 @@ function VideoFeedback({ onSubmitLines }) {
 
     if (e.code === 'ArrowUp') { // removes all lines
       const canvasContext = canvasRef.current.getContext('2d');
-      canvasContext.clearRect(0, 0, canvasWidth.current, canvasHeight.current);
+      // canvasContext.clearRect(0, 0, canvasWidth.current, canvasHeight.current);
       lines.current = [];
       return;
     }
@@ -141,7 +145,7 @@ function VideoFeedback({ onSubmitLines }) {
   });
 
   return (
-    <div class="video-container" tabIndex="0">
+    <div className="video-container" tabIndex="0">
       <div style={{ width: '1280px' }}>
         <canvas style={{ transform: 'scale(-1, 1)' }} ref={canvasRef} width="1280" height="720"></canvas>
       </div>
