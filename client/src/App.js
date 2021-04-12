@@ -1,7 +1,11 @@
 import _ from 'lodash';
+import * as fp from 'lodash/fp';
 import { useState, useRef, useEffect } from 'react';
 import { autoDraw } from './services/autodraw-api';
-import Utils from './utils';
+
+import Utils from './utils/index';
+import DrawUtils from './utils/draw';
+import HandsFreeUtils from './utils/handsfree'
 
 import { Button } from '@material-ui/core';
 import HelpDialog from './components/HelpDialog';
@@ -9,7 +13,6 @@ import simplify from 'simplify-js';
 
 import './App.css';
 import './components/styles/video-feedback.css';
-import utils from './utils';
 
 const handsfree = new window.Handsfree({
   hands: true,
@@ -36,13 +39,38 @@ const imgClasses = (url, selectedImage) => {
   return classes.join(' ');
 };
 
-const drawableImage = (image) => {
+const DrawableImage = (image) => {
   // get position from drawing that triggered the search
   return {
     ...image,
     size: imageHeight,
-    position: Utils.getDefaultPosition(canvasWidth, canvasHeight, imageHeight),
+    id: `${Date.now()}`,
+    position: DrawUtils.getDefaultPosition(canvasWidth, canvasHeight, imageHeight),
   };
+};
+
+const pointIntersectsImage = (point, drawableImage) => {
+  const { size, position: { x, y } } = drawableImage;
+
+   return point.x >= x && point.x <= x + size && point.y >= y && point.y <= y + size;
+};
+
+const getRectPoints = (origin, size) => {
+  return [
+    origin,
+    { x: origin.x + size, y: origin.y },
+    { x: origin.x + size, y: origin.y + size },
+    { x: origin.x, y: origin.y + size },
+    origin,
+  ];
+};
+
+const drawImageRect = (drawableImage, canvasContext) => {
+  DrawUtils.drawPath(
+    getRectPoints(drawableImage.position, drawableImage.size),
+    canvasContext,
+    'grey',
+  )
 };
 
 const topBarHeight = 100; // px
@@ -93,9 +121,8 @@ function App() {
     imagesPickedRef.current = picks;
   };
 
-  // const handleCleanPickedImages = () => setPicks([]);
   const handleAddPick = (pick) => {
-    const newPicks = [...imagesPickedRef.current, drawableImage(pick)];
+    const newPicks = [...imagesPickedRef.current, DrawableImage(pick)];
     return setPicks(newPicks);
   };
 
@@ -210,31 +237,64 @@ function App() {
         canvasRef.current.height
       );
 
-      const landmarks = handsfree.data.hands?.landmarks;
+      const [ rightThumb, rightIndex, pinch ] = HandsFreeUtils.getPinchFingers(handsfree);
 
-      let landmark;
-      if (landmarks && landmarks.length) {
-        const rightHand = landmarks[1];
-        if (rightHand.length) {
-          landmark = rightHand[8];
+
+      lines.current.forEach((line) => {
+        if (line.length < 1) return;
+        const simplified = simplify(line.map(({ x, y }) => ({ x, y })), 5);
+        DrawUtils.drawPath(simplified, canvasContext);
+      });
+
+      if (imagesPickedRef.current.length) {
+        DrawUtils.drawImages(imagesPickedRef.current, canvasContext);
+
+        if (!shouldDraw.current && imagesPickedRef.current.length && rightIndex) {
+          const intersectedImages = [ rightThumb, rightIndex ].reduce((intersectedImages, finger) => {
+            const fingerPosition = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, finger);
+            const fingerIntersections = imagesPickedRef.current.reduce((fingerIntersections, drawableImage) => {
+              if (
+                pointIntersectsImage(fingerPosition, drawableImage) &&
+                !intersectedImages.find(({ id }) => id === drawableImage.id)
+              ) {
+                fingerIntersections.push(drawableImage);
+              };
+              return fingerIntersections
+            }, []);
+            return intersectedImages.concat(fingerIntersections);
+          }, []);
+
+          intersectedImages.forEach((drawableImage) => {
+            drawImageRect(drawableImage, canvasContext)
+          });
+
+          const indexPosition = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, rightIndex);
+
+          if (pinch && intersectedImages.length) {
+            const moving = intersectedImages[0];
+
+            moving.position.x = indexPosition.x - moving.size / 2;
+            moving.position.y = indexPosition.y - moving.size / 2;
+          }
         }
       };
 
-      if (landmark) {
-        const currentLandmark = {
-          x: landmark.x * canvasRef.current.width,
-          y: landmark.y * canvasRef.current.height
-        };
-
-        Utils.drawLandmark(currentLandmark, canvasContext);
-        if (shouldDraw.current) currentLine.current.push(currentLandmark);
+      if (rightIndex) {
+        const landmark = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, rightIndex);
+        DrawUtils.drawLandmark(landmark, canvasContext);
+        
+        if (shouldDraw.current) currentLine.current.push(landmark);
       }
 
-      Utils.drawPaths(lines.current, canvasContext);
+      if (rightThumb && !shouldDraw.current) {
+        DrawUtils.drawLandmark(
+          DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, rightThumb),
+          canvasContext,
+          'blue',
+        );
+      }
 
-      if (imagesPickedRef.current.length) {
-        Utils.drawImages(imagesPickedRef.current, canvasContext);
-      };
+
       if (videoRunning.current) loop();
     });
   };
