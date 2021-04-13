@@ -15,12 +15,22 @@
     background: #17191c;
 }
 
-.controls .help-button {
+.controls .secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: absolute;
-    right: 60px;
-    color: white;
-    cursor: pointer;
+    right: 0;
+    padding: 0 2rem;
+    background: #17191c;
+    color: rgb(220, 220, 220);
 }
+
+.controls .secondary > * + *{
+    margin-left: 2rem;
+
+}
+
 
 .keyboard-help {
     box-sizing: border-box;

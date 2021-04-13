@@ -6,10 +6,10 @@ import { autoDraw } from './services/autodraw-api';
 import Utils from './utils/index';
 import DrawUtils from './utils/draw';
 import HandsFreeUtils from './utils/handsfree'
-
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Button, Typography } from '@material-ui/core';
 import HelpDialog from './components/HelpDialog';
+import ConfigDialog from './components/ConfigDialog';
 import simplify from 'simplify-js';
 
 import './App.css';
@@ -96,6 +96,12 @@ function App() {
   const canvasRef = useRef('canvas');
 
   const [modelsLoading, setModelsLoading] = useState(true);
+  const modelsLoadingRef = useRef(true);
+
+  const setModelsLoaded = () => {
+    modelsLoadingRef.current = false;
+    setModelsLoading(false);
+  };
 
   const selectedImageRef = useRef(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -194,14 +200,16 @@ function App() {
     }
   };
 
+  const ifModelsLoaded = (fn) => (...args) => !modelsLoadingRef.current && fn(...args);
+
   const setListenersOnce = () => {
     if (!listenersSet.current) {
       listenersSet.current = true;
-      Utils.debouncedListener('click', handleMouseClick);
-      Utils.debouncedListener('keydown', handleKeyDown);
-      Utils.debouncedListener('keyup', handleKeyUp);
+      Utils.debouncedListener('click', ifModelsLoaded(handleMouseClick));
+      Utils.debouncedListener('keydown', ifModelsLoaded(handleKeyDown));
+      Utils.debouncedListener('keyup', ifModelsLoaded(handleKeyUp));
       document.addEventListener('handsfree-modelReady', () => {
-        setModelsLoading(false);
+        setModelsLoaded();
       });
     }
   }
@@ -309,7 +317,6 @@ function App() {
       if (videoRunning.current) loop();
     });
   };
-  console.log({ videoFeedbackRunning , modelsLoading})
   return (
     <div className="App">
         <div className="image-toolbar">
@@ -338,7 +345,10 @@ function App() {
           <Button variant="contained" color="secondary" disabled={!videoFeedbackLoaded} onClick={toggleVideoRunning}>
             {videoFeedbackRunning ? 'stop' : 'start'}
           </Button>
-          <HelpDialog />
+          <div className="secondary">
+            <ConfigDialog />
+            <HelpDialog />
+          </div>
         </div>
 
       </div>

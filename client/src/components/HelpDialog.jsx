@@ -5,7 +5,7 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
-
+import InfoIcon from '@material-ui/icons/Info';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import ArrowForwardIcon from '@material-ui/icons/ArrowForward';
 import ArrowDownwardIcon from '@material-ui/icons/ArrowDownward';
@@ -18,7 +18,7 @@ export default function HelpDialog() {
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   return (
     <div className="help-button" onClick={() => setHelpDialogOpen(true)}>
-      <Typography>Help</Typography>
+      <InfoIcon />
       <Dialog open={helpDialogOpen} onClose={() => setHelpDialogOpen(false)} aria-labelledby="form-dialog-title">
         <DialogTitle id="form-dialog-title">Keyboard Reference:</DialogTitle>
         <DialogContent>

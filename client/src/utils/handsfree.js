@@ -16,7 +16,7 @@ function getPinchFingers (handsfree) {
   const rightHand = getRightHand(handsfree);
   if (rightHand) {
     const pinch = getIndexPinch(handsfree);
-    return [ rightHand[4], rightHand[8], pinch ];
+    return [ rightHand[4], rightHand[12], pinch ];
   }
 
   else return [ null, null, null ];
