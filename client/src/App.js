@@ -7,7 +7,8 @@ import Utils from './utils/index';
 import DrawUtils from './utils/draw';
 import HandsFreeUtils from './utils/handsfree'
 
-import { Button } from '@material-ui/core';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import { Button, Typography } from '@material-ui/core';
 import HelpDialog from './components/HelpDialog';
 import simplify from 'simplify-js';
 
@@ -52,7 +53,7 @@ const DrawableImage = (image) => {
 const pointIntersectsImage = (point, drawableImage) => {
   const { size, position: { x, y } } = drawableImage;
 
-   return point.x >= x && point.x <= x + size && point.y >= y && point.y <= y + size;
+  return point.x >= x && point.x <= x + size && point.y >= y && point.y <= y + size;
 };
 
 const getRectPoints = (origin, size) => {
@@ -90,6 +91,8 @@ function App() {
 
   let videoRunning = useRef(false);
   const canvasRef = useRef('canvas');
+
+  const [modelsLoading, setModelsLoading] = useState(true);
 
   const selectedImageRef = useRef(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -192,6 +195,10 @@ function App() {
       Utils.debouncedListener('click', handleMouseClick);
       Utils.debouncedListener('keydown', handleKeyDown);
       Utils.debouncedListener('keyup', handleKeyUp);
+      document.addEventListener('handsfree-modelReady', () => {
+        console.log('model is ready');
+        setModelsLoading(false);
+      });
     }
   }
 
@@ -237,7 +244,7 @@ function App() {
         canvasRef.current.height
       );
 
-      const [ rightThumb, rightIndex, pinch ] = HandsFreeUtils.getPinchFingers(handsfree);
+      const [rightThumb, rightIndex, pinch] = HandsFreeUtils.getPinchFingers(handsfree);
 
 
       lines.current.forEach((line) => {
@@ -250,7 +257,7 @@ function App() {
         DrawUtils.drawImages(imagesPickedRef.current, canvasContext);
 
         if (!shouldDraw.current && imagesPickedRef.current.length && rightIndex) {
-          const intersectedImages = [ rightThumb, rightIndex ].reduce((intersectedImages, finger) => {
+          const intersectedImages = [rightThumb, rightIndex].reduce((intersectedImages, finger) => {
             const fingerPosition = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, finger);
             const fingerIntersections = imagesPickedRef.current.reduce((fingerIntersections, drawableImage) => {
               if (
@@ -282,7 +289,7 @@ function App() {
       if (rightIndex) {
         const landmark = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, rightIndex);
         DrawUtils.drawLandmark(landmark, canvasContext);
-        
+
         if (shouldDraw.current) currentLine.current.push(landmark);
       }
 
@@ -294,14 +301,12 @@ function App() {
         );
       }
 
-
       if (videoRunning.current) loop();
     });
   };
-
+  console.log({ videoFeedbackRunning , modelsLoading})
   return (
     <div className="App">
-      <div className="video-container" tabIndex="0">
         <div className="image-toolbar">
           <div className="image-container suggestions" style={{ height: `${topBarHeight}px` }}>
             <div className="images">
@@ -316,9 +321,14 @@ function App() {
             </div>
           </div>
         </div>
-
-        <canvas style={{ transform: 'scale(-1, 1)' }} ref={canvasRef} width={canvasWidth} height={canvasHeight}></canvas>
-
+        <div style={{width: '100vw', height: canvasHeight}} className="video-container">
+          <canvas style={{ transform: 'scale(-1, 1)' }} ref={canvasRef} width={canvasWidth} height={canvasHeight}></canvas>
+          { videoFeedbackRunning && modelsLoading ? (
+            <div className="model-loading" style={{ width: canvasWidth, height: canvasHeight }}>
+              <Typography>Loading Models</Typography>&nbsp;&nbsp;&nbsp;<CircularProgress color="secondary"/>
+            </div> ) : null
+          }
+        </div>
         <div className="controls">
           <Button variant="contained" color="secondary" disabled={!videoFeedbackLoaded} onClick={toggleVideoRunning}>
             {videoFeedbackRunning ? 'stop' : 'start'}
@@ -327,7 +337,6 @@ function App() {
         </div>
 
       </div>
-    </div>
   );
 }
 
