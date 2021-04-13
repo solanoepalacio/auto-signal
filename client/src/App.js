@@ -20,6 +20,15 @@ const handsfree = new window.Handsfree({
   maxNumHands: 1
 });
 
+const topBarHeight = 100; // px
+const imageHeight = topBarHeight - 16;
+const imagesSuggestionsToDisplay = Math.floor(window.innerWidth / (imageHeight + 12));
+const bottomBarHeight = 56; // px
+const canvasHeight = window.innerHeight - topBarHeight - bottomBarHeight;
+const aspectRatio = 16 / 9;
+const canvasWidth = canvasHeight * aspectRatio;
+const renderedImageDefaultSize = 160;
+
 const track = () => {
   const referrer = document.referrer;
   const browser = _.get(window, 'navigator.appName');
@@ -44,9 +53,9 @@ const DrawableImage = (image) => {
   // get position from drawing that triggered the search
   return {
     ...image,
-    size: imageHeight,
+    size: renderedImageDefaultSize,
     id: `${Date.now()}`,
-    position: DrawUtils.getDefaultPosition(canvasWidth, canvasHeight, imageHeight),
+    position: DrawUtils.getDefaultPosition(canvasWidth, canvasHeight, renderedImageDefaultSize),
   };
 };
 
@@ -74,13 +83,7 @@ const drawImageRect = (drawableImage, canvasContext) => {
   )
 };
 
-const topBarHeight = 100; // px
-const imageHeight = topBarHeight - 16;
-const bottomBarHeight = 56; // px
-const canvasHeight = window.innerHeight - topBarHeight - bottomBarHeight;
-const aspectRatio = 16 / 9;
-const canvasWidth = canvasHeight * aspectRatio;
-const renderedImageDefaultSize = 150;
+
 
 function App() {
   let lines = useRef([]);
@@ -110,8 +113,10 @@ function App() {
 
   const handleSubmitLines = async (...args) => {
     const imageSuggestions = await autoDraw(...args);
-    setSuggestions(imageSuggestions);
-    if (imageSuggestions.length) {
+    console.log('imageSu', imagesSuggestionsToDisplay);
+    const suggestions = imageSuggestions.slice(0, imagesSuggestionsToDisplay);
+    setSuggestions(suggestions);
+    if (suggestions.length) {
       selectImage(imageSuggestions[0]);
     }
   };
@@ -196,7 +201,6 @@ function App() {
       Utils.debouncedListener('keydown', handleKeyDown);
       Utils.debouncedListener('keyup', handleKeyUp);
       document.addEventListener('handsfree-modelReady', () => {
-        console.log('model is ready');
         setModelsLoading(false);
       });
     }
@@ -230,8 +234,8 @@ function App() {
     document.activeElement.blur();
   }
 
-  const [videoFeedbackLoaded, setVideoFeedbackLoaded] = useState(false);
-  const [videoFeedbackRunning, setVideoFeedbackRunning] = useState(false);
+  const [ videoFeedbackLoaded, setVideoFeedbackLoaded ] = useState(false);
+  const [ videoFeedbackRunning, setVideoFeedbackRunning ] = useState(false);
 
   const loop = () => {
     const canvasContext = canvasRef.current.getContext('2d');
@@ -244,7 +248,7 @@ function App() {
         canvasRef.current.height
       );
 
-      const [rightThumb, rightIndex, pinch] = HandsFreeUtils.getPinchFingers(handsfree);
+      const [ rightThumb, rightIndex, pinch ] = HandsFreeUtils.getPinchFingers(handsfree);
 
 
       lines.current.forEach((line) => {
@@ -275,13 +279,14 @@ function App() {
             drawImageRect(drawableImage, canvasContext)
           });
 
-          const indexPosition = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, rightIndex);
+          const pinchRelativePosition = DrawUtils.midpoint(rightIndex, rightThumb);
+          const pinchPosition = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, pinchRelativePosition);
 
           if (pinch && intersectedImages.length) {
             const moving = intersectedImages[0];
 
-            moving.position.x = indexPosition.x - moving.size / 2;
-            moving.position.y = indexPosition.y - moving.size / 2;
+            moving.position.x = pinchPosition.x - moving.size / 2;
+            moving.position.y = pinchPosition.y - moving.size / 2;
           }
         }
       };
@@ -308,7 +313,7 @@ function App() {
   return (
     <div className="App">
         <div className="image-toolbar">
-          <div className="image-container suggestions" style={{ height: `${topBarHeight}px` }}>
+          <div className="image-container" style={{ height: `${topBarHeight}px` }}>
             <div className="images">
               {imageSuggestions.map(({ url }) => (
                 <img

@@ -23,37 +23,32 @@ export default function HelpDialog() {
         <DialogTitle id="form-dialog-title">Keyboard Reference:</DialogTitle>
         <DialogContent>
           <div className="keyboard-help">
-            <ArrowUpwardIcon />
+            <ArrowUpwardIcon />&nbsp;&nbsp;&nbsp;&nbsp;
             <DialogContentText>Borra todas las lineas dibujadas (en el video)</DialogContentText>
           </div>
           <div className="keyboard-help">
-            <ArrowForwardIcon />
+            <ArrowForwardIcon />&nbsp;&nbsp;&nbsp;&nbsp;
             <DialogContentText>Mueve la seleccion hacia la derecha</DialogContentText>
           </div>
           <div className="keyboard-help">
-            <ArrowBackIcon />
+            <ArrowBackIcon />&nbsp;&nbsp;&nbsp;&nbsp;
             <DialogContentText>Mueve la seleccion hacia la izquierda</DialogContentText>
           </div>
           <div className="keyboard-help">
-            <ArrowDownwardIcon />
+            <ArrowDownwardIcon />&nbsp;&nbsp;&nbsp;&nbsp;
             <DialogContentText>Borra la ultima linea dibujada (en el video)</DialogContentText>
           </div>
 
           <div className="keyboard-help">
-            <SpaceBarIcon />
+            <SpaceBarIcon />&nbsp;&nbsp;&nbsp;&nbsp;
             <DialogContentText>Presiona esta tecla para dibujar</DialogContentText>
           </div>
 
           <div className="keyboard-help">
-            <MouseIcon />
+            <MouseIcon />&nbsp;&nbsp;&nbsp;&nbsp;
             <DialogContentText>Une la imagen seleccionada al grupo de la derecha</DialogContentText>
           </div>
         </DialogContent>
-        {/* <DialogActions>
-            <Button variant="contained" onClick={handleSavePatient} color="primary">
-              <SaveIcon></SaveIcon>
-            </Button>
-          </DialogActions> */}
       </Dialog>
     </div>
 

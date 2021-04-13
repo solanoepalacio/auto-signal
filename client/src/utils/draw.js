@@ -52,4 +52,11 @@ function getDefaultPosition(canvasWidth, canvasHeight, size) {
   }
 }
 
-export default { point, drawLandmark, drawPath, drawImages, getDefaultPosition, transformRelativePosition };
+function midpoint({ x: x0, y: y0 }, { x: x1, y: y1 }) {
+  return {
+    x: (x1 + x0) / 2,
+    y: (y1 + y0) / 2,
+  };
+}
+
+export default { point, drawLandmark, drawPath, drawImages, getDefaultPosition, transformRelativePosition, midpoint };
