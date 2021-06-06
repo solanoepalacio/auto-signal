@@ -7,24 +7,26 @@ function getIndexPinch (handsfree) {
     null;
 
   if (!pinchState) return null;
-  const [_, rightHandPinches] = pinchState;
+  const [_, handPinches] = pinchState;
   
-  return rightHandPinches[0] === 'held';
+  return handPinches[0] === 'held';
 }
 
-function getPinchFingers (handsfree) {
-  const rightHand = getRightHand(handsfree);
-  if (rightHand) {
-    const pinch = getIndexPinch(handsfree);
-    return [ rightHand[4], rightHand[12], pinch ];
+function getPinchFingers (handsfree, rightOrLeft, landmarkIndex) {
+  const hand = getHand(handsfree, rightOrLeft);
+  if (hand) {
+    const pinch = getIndexPinch(handsfree, rightOrLeft);
+    return [ hand[4], hand[landmarkIndex], pinch ];
   }
 
   else return [ null, null, null ];
 };
 
-const getRightHand = (handsfree) => {
+const getHand = (handsfree, rightOrLeft) => {
   const landmarks = getHandLandmarks(handsfree);
-  return landmarks.length ? landmarks[1] : null;
+  if (!landmarks.length) return null;
+  const handIndex = rightOrLeft === 'right' ? 1 : 0;
+  return landmarks[handIndex];
 };
 
 

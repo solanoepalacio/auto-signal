@@ -3,6 +3,7 @@ import * as fp from 'lodash/fp';
 import { useState, useRef, useEffect } from 'react';
 import { autoDraw } from './services/autodraw-api';
 
+
 import Utils from './utils/index';
 import DrawUtils from './utils/draw';
 import HandsFreeUtils from './utils/handsfree'
@@ -119,7 +120,6 @@ function App() {
 
   const handleSubmitLines = async (...args) => {
     const imageSuggestions = await autoDraw(...args);
-    console.log('imageSu', imagesSuggestionsToDisplay);
     const suggestions = imageSuggestions.slice(0, imagesSuggestionsToDisplay);
     setSuggestions(suggestions);
     if (suggestions.length) {
@@ -256,7 +256,7 @@ function App() {
         canvasRef.current.height
       );
 
-      const [ rightThumb, rightIndex, pinch ] = HandsFreeUtils.getPinchFingers(handsfree);
+      const [ thumb, customFinger, pinch ] = HandsFreeUtils.getPinchFingers(handsfree, handConfigRef.current, landmarkConfigRef.current);
 
 
       lines.current.forEach((line) => {
@@ -268,8 +268,8 @@ function App() {
       if (imagesPickedRef.current.length) {
         DrawUtils.drawImages(imagesPickedRef.current, canvasContext);
 
-        if (!shouldDraw.current && imagesPickedRef.current.length && rightIndex) {
-          const intersectedImages = [rightThumb, rightIndex].reduce((intersectedImages, finger) => {
+        if (!shouldDraw.current && imagesPickedRef.current.length && customFinger) {
+          const intersectedImages = [thumb, customFinger].reduce((intersectedImages, finger) => {
             const fingerPosition = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, finger);
             const fingerIntersections = imagesPickedRef.current.reduce((fingerIntersections, drawableImage) => {
               if (
@@ -287,7 +287,7 @@ function App() {
             drawImageRect(drawableImage, canvasContext)
           });
 
-          const pinchRelativePosition = DrawUtils.midpoint(rightIndex, rightThumb);
+          const pinchRelativePosition = DrawUtils.midpoint(customFinger, thumb);
           const pinchPosition = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, pinchRelativePosition);
 
           if (pinch && intersectedImages.length) {
@@ -299,16 +299,19 @@ function App() {
         }
       };
 
-      if (rightIndex) {
-        const landmark = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, rightIndex);
+      if (customFinger) {
+        const landmark = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, customFinger);
         DrawUtils.drawLandmark(landmark, canvasContext);
 
-        if (shouldDraw.current) currentLine.current.push(landmark);
+        if (shouldDraw.current) {
+
+          currentLine.current.push(landmark);
+        }
       }
 
-      if (rightThumb && !shouldDraw.current) {
+      if (thumb && !shouldDraw.current) {
         DrawUtils.drawLandmark(
-          DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, rightThumb),
+          DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, thumb),
           canvasContext,
           'blue',
         );
@@ -317,6 +320,30 @@ function App() {
       if (videoRunning.current) loop();
     });
   };
+
+  const landmarkConfigRef = useRef(8);
+  const [landmarkConfig, setLandmarkConfig] = useState(8);
+  const setLandmark = (landmark) => {
+    console.log('setLandmark', landmark);
+    setLandmarkConfig(landmark);
+    landmarkConfigRef.current = landmark;
+  };
+  
+  const [ pinchConfig, setPinchConfig ] = useState(true);
+  const setPinch = (pinchActive) => {
+    console.log('pinch config', pinchActive)
+    setPinchConfig(pinchActive);
+
+  };
+
+  const handConfigRef = useRef('right');
+  const [ handConfig, setHandConfig ] = useState('right');
+  const setHand = (selectedHand) => {
+    console.log('selected hand', selectedHand);
+    setHandConfig(selectedHand);
+    handConfigRef.current = selectedHand;
+  };
+
   return (
     <div className="App">
         <div className="image-toolbar">
@@ -346,7 +373,14 @@ function App() {
             {videoFeedbackRunning ? 'stop' : 'start'}
           </Button>
           <div className="secondary">
-            <ConfigDialog />
+            <ConfigDialog
+              onLandmarkChange={setLandmark}
+              onPinchConfigSwitch={setPinch}
+              pinchConfig={pinchConfig}
+              landmarkConfig={landmarkConfig}
+              handConfig={handConfig}
+              onHandConfigChange={setHand}
+            />
             <HelpDialog />
           </div>
         </div>
