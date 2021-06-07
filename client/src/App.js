@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import * as fp from 'lodash/fp';
 import { useState, useRef, useEffect } from 'react';
+import { LazyBrush } from 'lazy-brush';
+
 import { autoDraw } from './services/autodraw-api';
-
-
 import Utils from './utils/index';
 import DrawUtils from './utils/draw';
 import HandsFreeUtils from './utils/handsfree'
@@ -29,6 +29,7 @@ const canvasHeight = window.innerHeight - topBarHeight - bottomBarHeight;
 const aspectRatio = 16 / 9;
 const canvasWidth = canvasHeight * aspectRatio;
 const renderedImageDefaultSize = 160;
+const BRUSH_RADIUS_CONFIG = 12;
 
 const track = () => {
   const referrer = document.referrer;
@@ -83,8 +84,6 @@ const drawImageRect = (drawableImage, canvasContext) => {
     'grey',
   )
 };
-
-
 
 function App() {
   let lines = useRef([]);
@@ -195,8 +194,8 @@ function App() {
   const handleKeyUp = (e) => {
     if (e.code === 'Space') {
       shouldDraw.current = false;
-      const simplified = lines.current.map((pointPositions) => simplify(pointPositions.map(({ x, y }) => ({ x, y })), 5));
-      handleSubmitLines(simplified, canvasWidth, canvasHeight);
+      handleSubmitLines(lines.current, canvasWidth, canvasHeight);
+      brushRef.current = null;
     }
   };
 
@@ -245,6 +244,8 @@ function App() {
   const [ videoFeedbackLoaded, setVideoFeedbackLoaded ] = useState(false);
   const [ videoFeedbackRunning, setVideoFeedbackRunning ] = useState(false);
 
+  const brushRef = useRef(null);
+
   const loop = () => {
     const canvasContext = canvasRef.current.getContext('2d');
     requestAnimationFrame(() => {
@@ -261,8 +262,8 @@ function App() {
 
       lines.current.forEach((line) => {
         if (line.length < 1) return;
-        const simplified = simplify(line.map(({ x, y }) => ({ x, y })), 5);
-        DrawUtils.drawPath(simplified, canvasContext);
+        // const simplified = simplify(, 5);
+        DrawUtils.drawPath(line.map(({ x, y }) => ({ x, y })), canvasContext);
       });
 
       if (imagesPickedRef.current.length) {
@@ -302,10 +303,24 @@ function App() {
       if (customFinger) {
         const landmark = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, customFinger);
         DrawUtils.drawLandmark(landmark, canvasContext);
-
         if (shouldDraw.current) {
+          if (!currentLine.current.length) {
+            brushRef.current = new LazyBrush({
+              enabled: true,
+              radius: BRUSH_RADIUS_CONFIG,
+              initialPoint: landmark,
+            });
+            currentLine.current.push(landmark);
+          }
 
-          currentLine.current.push(landmark);
+          else {
+            const lineUpdated = brushRef.current.update(landmark);
+            if (lineUpdated) {
+              currentLine.current.push(brushRef.current.getBrushCoordinates());
+            }
+            
+          }
+          
         }
       }
 

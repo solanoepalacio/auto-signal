@@ -5,9 +5,6 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import SettingsIcon from '@material-ui/icons/Settings';
-import ListItemText from '@material-ui/core/ListItemText';
-import ListItem from '@material-ui/core/ListItem';
-import List from '@material-ui/core/List';
 import Radio from '@material-ui/core/Radio';
 import RadioGroup from '@material-ui/core/RadioGroup';
 import Divider from '@material-ui/core/Divider';
@@ -43,12 +40,12 @@ export default function ConfigDialog({ onLandmarkChange, landmarkConfig, onPinch
               labelPlacement="start"
               control={
                 <Switch
+                  disabled
                   checked={pinchConfig}
                   onChange={({ target: { value }}) => onPinchConfigSwitch(value)}
                 />
               }
               label="Move objects using pinch"
-              
             />
           </FormGroup>
           <Divider />
@@ -59,7 +56,7 @@ export default function ConfigDialog({ onLandmarkChange, landmarkConfig, onPinch
                 control={<TextField
                   margin="normal"
                   type="number"
-                  InputProps={{ inputProps: { min: 0, max: 20, shrink: false } }}
+                  InputProps={{ inputProps: { min: 0, max: 21, shrink: false } }}
                   value={landmarkConfig}
                   InputLabelProps={{
                     shrink: true,
@@ -68,7 +65,7 @@ export default function ConfigDialog({ onLandmarkChange, landmarkConfig, onPinch
                 }
                 onChange={({ target: { value }}) => onLandmarkChange(value)}
                 color="secondary"
-                label="Hand Landmark used to draw (0 - 20)"
+                label="Hand Landmark used to draw (0 - 21)"
               />
               <img style={{ margin: '1.2rem 0' }}src={landmarksImg} width="90%%"></img>
             </FormGroup>
