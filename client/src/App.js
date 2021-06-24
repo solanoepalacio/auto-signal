@@ -232,10 +232,11 @@ function App() {
     setVideoFeedbackRunning(false);
   }
 
-  const toggleVideoRunning = () => {
+  const toggleVideoRunning = (e) => {
     if (videoRunning.current) handleStop();
     else handleStart();
-
+    
+    e.preventDefault();
     document.activeElement.blur();
   }
 
