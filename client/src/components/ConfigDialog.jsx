@@ -28,7 +28,6 @@ export default function ConfigDialog({ onLandmarkChange, landmarkConfig, onPinch
                 <RadioGroup aria-label="gender" name="gender1" value={handConfig} onChange={({ target: { value }}) => onHandConfigChange(value)}>
                   <FormControlLabel value="left" control={<Radio />} label="Left" />
                   <FormControlLabel value="right" control={<Radio />} label="right" />
-                  <FormControlLabel value="disabled" disabled control={<Radio />} label="both" />
               </RadioGroup>
               }
               label="Hand to use"
@@ -40,9 +39,8 @@ export default function ConfigDialog({ onLandmarkChange, landmarkConfig, onPinch
               labelPlacement="start"
               control={
                 <Switch
-                  disabled
                   checked={pinchConfig}
-                  onChange={({ target: { value }}) => onPinchConfigSwitch(value)}
+                  onChange={(e) => onPinchConfigSwitch(e)}
                 />
               }
               label="Move objects using pinch"
@@ -56,7 +54,7 @@ export default function ConfigDialog({ onLandmarkChange, landmarkConfig, onPinch
                 control={<TextField
                   margin="normal"
                   type="number"
-                  InputProps={{ inputProps: { min: 0, max: 21, shrink: false } }}
+                  InputProps={{ inputProps: { min: 0, max: 21 } }}
                   value={landmarkConfig}
                   InputLabelProps={{
                     shrink: true,

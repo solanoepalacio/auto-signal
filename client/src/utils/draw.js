@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import simplify from 'simplify-js';
+// import simplify from 'simplify-js';
 
 const transformRelativePosition = (canvasWidth, canvasHeight, { x, y }) => {
   return { x: x * canvasWidth, y: y * canvasHeight };

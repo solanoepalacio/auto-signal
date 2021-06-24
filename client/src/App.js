@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import * as fp from 'lodash/fp';
 import { useState, useRef, useEffect } from 'react';
 import { LazyBrush } from 'lazy-brush';
 
@@ -11,7 +10,6 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { Button, Typography } from '@material-ui/core';
 import HelpDialog from './components/HelpDialog';
 import ConfigDialog from './components/ConfigDialog';
-import simplify from 'simplify-js';
 
 import './App.css';
 import './components/styles/video-feedback.css';
@@ -324,7 +322,7 @@ function App() {
         }
       }
 
-      if (thumb && !shouldDraw.current) {
+      if (thumb && !shouldDraw.current && pinchConfigRef.current && landmarkConfigRef.current === 8) {
         DrawUtils.drawLandmark(
           DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, thumb),
           canvasContext,
@@ -339,22 +337,21 @@ function App() {
   const landmarkConfigRef = useRef(8);
   const [landmarkConfig, setLandmarkConfig] = useState(8);
   const setLandmark = (landmark) => {
-    console.log('setLandmark', landmark);
     setLandmarkConfig(landmark);
     landmarkConfigRef.current = landmark;
   };
   
   const [ pinchConfig, setPinchConfig ] = useState(true);
-  const setPinch = (pinchActive) => {
-    console.log('pinch config', pinchActive)
-    setPinchConfig(pinchActive);
-
+  const pinchConfigRef = useRef(true);
+  const setPinch = () => {
+    const newConfig = !pinchConfigRef.current;
+    setPinchConfig(newConfig);
+    pinchConfigRef.current = newConfig;
   };
 
   const handConfigRef = useRef('right');
   const [ handConfig, setHandConfig ] = useState('right');
   const setHand = (selectedHand) => {
-    console.log('selected hand', selectedHand);
     setHandConfig(selectedHand);
     handConfigRef.current = selectedHand;
   };
