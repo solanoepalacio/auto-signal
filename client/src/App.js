@@ -235,7 +235,7 @@ function App() {
   const toggleVideoRunning = (e) => {
     if (videoRunning.current) handleStop();
     else handleStart();
-    
+
     e.preventDefault();
     document.activeElement.blur();
   }
@@ -265,10 +265,12 @@ function App() {
         DrawUtils.drawPath(line.map(({ x, y }) => ({ x, y })), canvasContext);
       });
 
+      const pinchIsActive =  pinchConfigRef.current && landmarkConfigRef.current === 8;
+
       if (imagesPickedRef.current.length) {
         DrawUtils.drawImages(imagesPickedRef.current, canvasContext);
 
-        if (!shouldDraw.current && imagesPickedRef.current.length && customFinger) {
+        if (!shouldDraw.current && imagesPickedRef.current.length && customFinger && pinchIsActive) {
           const intersectedImages = [thumb, customFinger].reduce((intersectedImages, finger) => {
             const fingerPosition = DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, finger);
             const fingerIntersections = imagesPickedRef.current.reduce((fingerIntersections, drawableImage) => {
@@ -322,8 +324,8 @@ function App() {
           
         }
       }
-
-      if (thumb && !shouldDraw.current && pinchConfigRef.current && landmarkConfigRef.current === 8) {
+      
+      if (thumb && !shouldDraw.current && pinchIsActive) {
         DrawUtils.drawLandmark(
           DrawUtils.transformRelativePosition(canvasWidth, canvasHeight, thumb),
           canvasContext,
